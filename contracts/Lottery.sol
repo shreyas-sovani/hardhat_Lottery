@@ -4,59 +4,78 @@ pragma solidity ^0.8.28;
 
 contract Lottery {
 
+    bool public isOpen;
     address public manager;
     address[] public players;
-    uint public lotteryId;
-    enum LOTTERY_STATE {
-        OPEN,
-        CLOSED,
-        CALCULATING_WINNER
-    }
-    uint public entryFee;
-    LOTTERY_STATE public lotteryState;
-
-    event WinnerPicked(address indexed winner, uint indexed lotteryId);
-    event PlayerEntered(address indexed player);
+    uint public entryAmount;
+    uint public roundId = 1;
+    address public lastWinner;
 
 
+   
     constructor() {
         manager = msg.sender;
-        entryFee = 0.01 ether;
+        isOpen = true;
+        entryAmount = 0.01 ether;
     }
 
-    function enterLottery() public payable {
+    function openLottery() public onlyManager{ 
+        require(!isOpen, "Lottery is already open");
+        isOpen = true;
+    }
 
-        require(lotteryState == LOTTERY_STATE.OPEN, "Lottery is not open");
-        require(msg.value >= entryFee, "Not enough ETH to enter lottery");  
+    function enterLottery() public payable{
+        require(isOpen, "Lottery is not open");
+        require(msg.value == entryAmount,"Incorrect entry amount");
         players.push(msg.sender);
-        emit PlayerEntered(msg.sender);
-        
     }
 
-    function getPlayers() public view returns (address[] memory) {
-        return players;
+    function closeLottery() public onlyManager{
+        require(isOpen, "Lottery is already closed");
+        isOpen = false;
     }
 
-    function pickWinner() public onlyManager{
-        uint random = uint(keccak256(abi.encodePacked(block.prevrandao, block.timestamp, players)));
-        uint index = random % players.length;
-        address winner = players[index];
-        //transfer the balance to the winner
-        payable(winner).transfer(address(this).balance);
-        emit WinnerPicked(winner,lotteryId);
-        //reset player array
-        players = new address[](0);
-        lotteryId++;
-        lotteryState = LOTTERY_STATE.CLOSED;
+
+
+    function transferPot() public onlyManager{
+        //Pick a random winner 
+        //randomness is not secure and must be replaced by VRF for any non-local usage
+        require(!isOpen, "Lottery is still open");
+        require(players.length > 0, "No players in the lottery");
+        uint randomIndex  =  uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, players))) % players.length;
+
+        address winner = players[randomIndex];
+
+        //Transfer the pot to the winner
+        (bool success, ) = payable(winner).call{value: address(this).balance}("");
+        require(success, "Transfer failed");
+
+        //Reset the lottery for the next round
+        lastWinner = winner;
+        delete players;
+        isOpen = true;
+        roundId++;
     }
 
-    function resetLottery() public onlyManager {
-        require(lotteryState == LOTTERY_STATE.CLOSED, "Can't reset lottery yet");
-        lotteryState = LOTTERY_STATE.OPEN;
+    function getTotalPlayers() public view returns(uint){
+        return players.length;
     }
 
-    modifier onlyManager {
-        require(msg.sender == manager, "Not authorized");
+    function getCurrentRound() public view returns(uint){
+        return roundId;
+    }
+
+    function getBalance() public view returns(uint){
+        return address(this).balance;
+    }
+
+    function getEntryAmount() public view returns(uint){
+        return entryAmount;
+    }
+
+
+    modifier onlyManager(){
+        require(msg.sender == manager, "Only manager can call this function");
         _;
     }
 
