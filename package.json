@@ -4,7 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "node": "npx hardhat node",
+    "deploy": "npx hardhat ignition deploy ./ignition/modules/lottery.js --network localhost",
+    "status": "npx hardhat run scripts/status.js --network localhost",
+    "enter": "npx hardhat run scripts/enter.js --network localhost",
+    "close": "npx hardhat run scripts/close.js --network localhost",
+    "pick-winner": "npx hardhat run scripts/pickWinner.js --network localhost",
+    "interact": "npx hardhat run scripts/interact.js --network localhost"
   },
   "keywords": [],
   "author": "",
