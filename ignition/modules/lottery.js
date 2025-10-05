@@ -5,7 +5,7 @@ module.exports = buildModule("Lottery", (m)=>{
     let lottery;
     if(network.name === "hardhat" || network.name === "localhost"){
         lottery = m.contract("Lottery");
-        return lottery;
+        return {lottery};
     }
 })
 

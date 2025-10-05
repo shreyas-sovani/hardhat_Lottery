@@ -10,6 +10,7 @@ contract Lottery {
     uint public entryAmount;
     uint public roundId = 1;
     address public lastWinner;
+    uint public randomIndex;
 
 
    
@@ -42,7 +43,7 @@ contract Lottery {
         //randomness is not secure and must be replaced by VRF for any non-local usage
         require(!isOpen, "Lottery is still open");
         require(players.length > 0, "No players in the lottery");
-        uint randomIndex  =  uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, players))) % players.length;
+        randomIndex  =  uint(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, players))) % players.length;
 
         address winner = players[randomIndex];
 
@@ -71,6 +72,22 @@ contract Lottery {
 
     function getEntryAmount() public view returns(uint){
         return entryAmount;
+    }
+
+    function getLotteryStatus() public view returns(bool){
+        return isOpen;
+    }
+
+    function getManager() public view returns(address){
+        return manager;
+    }
+
+    function getLastWinner() public view returns(address){
+        return lastWinner;
+    }
+
+    function getWinnerIndex() public view returns(uint){
+        return randomIndex;
     }
 
 
